@@ -1,0 +1,816 @@
+<title>Toronto Lease Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --ground:#eef1f3; --panel:#ffffff; --ink:#14202b; --ink-2:#4d5b67; --muted:#7b8893; --rule:#d6dde2; --rule-2:#e6ebee;
+  --accent:#0f6b73; --accent-ink:#ffffff; --accent-soft:#d7ecec; --lake:#e3eaef;
+  --up:#c8322f; --down:#256abf; --mid:#eceae6;
+  --s0:#2a78d6; --s1:#eb6834; --s2:#1baf7a;
+  --focus:#0f6b73;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif; --body:"Source Sans 3",system-ui,-apple-system,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  color-scheme:dark; --ground:#0f161c; --panel:#162029; --ink:#eef2f4; --ink-2:#b3bfc8; --muted:#84919b; --rule:#2a3843; --rule-2:#213039;
+  --accent:#4fb3b9; --accent-ink:#06282b; --accent-soft:#173a3e; --lake:#13202a; --up:#e66767; --down:#5598e7; --mid:#383835;
+  --s0:#3987e5; --s1:#d95926; --s2:#199e70; --focus:#4fb3b9; } }
+:root[data-theme="dark"]{
+  color-scheme:dark; --ground:#0f161c; --panel:#162029; --ink:#eef2f4; --ink-2:#b3bfc8; --muted:#84919b; --rule:#2a3843; --rule-2:#213039;
+  --accent:#4fb3b9; --accent-ink:#06282b; --accent-soft:#173a3e; --lake:#13202a; --up:#e66767; --down:#5598e7; --mid:#383835;
+  --s0:#3987e5; --s1:#d95926; --s2:#199e70; --focus:#4fb3b9; }
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:15px/1.5 var(--body);padding-inline:clamp(16px,3vw,36px);padding-block:0 48px}
+.wrap{max-width:1360px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,4.2vw,50px);font-weight:800;font-stretch:78%;letter-spacing:-.01em;line-height:1.02}
+h2{font-size:22px;font-weight:700;font-stretch:85%}
+h3{font-size:15px;font-weight:700;font-stretch:90%}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+p{margin:0;max-width:68ch}
+.dim{color:var(--ink-2)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* masthead */
+header{display:grid;grid-template-columns:1fr auto;gap:20px 32px;align-items:end;padding-top:28px;border-bottom:2px solid var(--ink);padding-bottom:18px}
+header .lede{grid-column:1/-1;color:var(--ink-2);font-size:16px}
+.stamp{text-align:right;font:12px/1.5 var(--mono);color:var(--ink-2)}
+@media (max-width:720px){header{grid-template-columns:1fr}.stamp{text-align:left}}
+
+/* control bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ground);display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding-block:10px;border-bottom:1px solid var(--rule)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:transparent;padding:6px 12px;cursor:pointer;font:600 13px/1.2 var(--body);color:var(--ink-2);border-right:1px solid var(--rule)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--ground)}
+.seg button:hover:not([aria-pressed="true"]){background:var(--rule-2)}
+.ctl{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+select,input[type=number]{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:5px 8px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:4px 6px 4px 12px;font-size:13px}
+.chip button{border:0;background:var(--accent);color:var(--accent-ink);border-radius:999px;width:22px;height:22px;cursor:pointer;line-height:1}
+
+/* headline figures */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--rule);background:var(--panel);border-radius:8px}
+.kpi{padding:18px 20px;display:flex;flex-direction:column;gap:10px;border-right:1px solid var(--rule)}
+.kpi:last-child{border-right:0}
+.kpi .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.kpi .name{font:800 26px/1 var(--display);font-stretch:75%}
+.kpi .sw{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:8px;vertical-align:middle}
+.kpi .big{font:600 30px/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:13px}
+.kpi dt{color:var(--ink-2)} .kpi dd{margin:0;text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.pill{font:600 12px/1 var(--mono);padding:4px 7px;border-radius:4px;white-space:nowrap}
+.pill.up{background:color-mix(in oklab,var(--up) 16%,transparent);color:var(--up)}
+.pill.down{background:color-mix(in oklab,var(--down) 16%,transparent);color:var(--down)}
+.pill.flat{background:var(--rule-2);color:var(--ink-2)}
+.kpi.off{opacity:.38}
+@media (max-width:860px){.kpis{grid-template-columns:1fr}.kpi{border-right:0;border-bottom:1px solid var(--rule)}.kpi:last-child{border-bottom:0}}
+
+/* map + side */
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+@media (max-width:1040px){.stage{grid-template-columns:1fr}}
+.mapcard{background:var(--panel);border:1px solid var(--rule);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.maphead{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--rule)}
+.metrics{display:flex;flex-wrap:wrap;gap:6px}
+.metrics button{border:1px solid var(--rule);background:transparent;border-radius:999px;padding:5px 11px;font-size:13px;cursor:pointer;color:var(--ink-2)}
+.metrics button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.canvaswrap{position:relative;aspect-ratio:16/10;max-width:100%;background:var(--lake);touch-action:none}
+.canvaswrap canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+.maptools{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.maptools button{width:32px;height:32px;border-radius:6px;border:1px solid var(--rule);background:var(--panel);cursor:pointer;font:600 16px/1 var(--mono)}
+.legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--rule);font-size:12px;color:var(--ink-2)}
+.legend .ramp{display:flex;height:10px;width:220px;max-width:50vw;border-radius:2px;overflow:hidden}
+.legend .ramp i{flex:1}
+.legend .ticks{display:flex;justify-content:space-between;width:220px;max-width:50vw;font:11px var(--mono)}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--ground);border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.45;max-width:240px;z-index:3;box-shadow:0 4px 14px rgb(0 0 0 / .18)}
+.tip b{font-family:var(--mono);font-weight:600}
+.side{display:flex;flex-direction:column;gap:20px}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.rows{display:grid;grid-template-columns:1fr auto auto auto;gap:6px 12px;font-size:13px;align-items:baseline}
+.rows .h{font:600 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.rows .v{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.fair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fair label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-2)}
+.fair select,.fair input{width:100%}
+.band{position:relative;height:34px;margin-top:6px}
+.band .track{position:absolute;left:0;right:0;top:14px;height:6px;background:var(--rule-2);border-radius:3px}
+.band .iqr{position:absolute;top:10px;height:14px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:3px}
+.band .med{position:absolute;top:6px;width:2px;height:22px;background:var(--accent)}
+.band .you{position:absolute;top:2px;width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--panel);transform:translateX(-6px)}
+.verdict{font:600 14px/1.4 var(--body)}
+.note{font-size:12px;color:var(--muted)}
+
+/* trend */
+.two{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px}
+@media (max-width:1040px){.two{grid-template-columns:1fr}}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.keys{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink-2)}
+.keys span{display:inline-flex;align-items:center;gap:6px}
+.keys i{width:16px;height:0;border-top:2px solid;display:inline-block}
+.keys i.dash{border-top-style:dashed}
+
+/* insights */
+.insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0;border-top:2px solid var(--ink)}
+.ins{padding:16px 18px 18px 0;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--rule)}
+.ins .fig{font:600 28px/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.ins p{font-size:14px;color:var(--ink-2)}
+.ins+.ins{padding-left:18px;border-left:1px solid var(--rule)}
+
+/* market layer */
+.market{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px}
+@media (max-width:1040px){.market{grid-template-columns:1fr}}
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--rule);border-radius:8px;background:var(--panel)}
+.strip div{padding:12px 16px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:4px}
+.strip div:last-child{border-right:0}
+.strip .v{font:600 22px/1 var(--mono);font-variant-numeric:tabular-nums}
+.strip .l{font-size:12px;color:var(--ink-2)}
+@media (max-width:860px){.strip{grid-template-columns:1fr 1fr}.strip div:nth-child(2){border-right:0}.strip div:nth-child(-n+2){border-bottom:1px solid var(--rule)}}
+.scatter circle{cursor:pointer}
+.quad{font:600 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;fill:var(--muted)}
+
+/* table */
+.tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--rule);border-radius:8px;max-height:560px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:860px}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--rule-2);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:190px}
+thead th{position:sticky;top:0;background:var(--panel);font:600 10px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);cursor:pointer;user-select:none;border-bottom:1px solid var(--rule)}
+thead th[aria-sort]{color:var(--ink)}
+td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+td:first-child{font-family:var(--body)}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--rule-2)}
+tbody tr.sel{background:var(--accent-soft)}
+.up-t{color:var(--up)} .down-t{color:var(--down)}
+.foot{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--rule);padding-top:16px}
+.loading{padding:60px 0;text-align:center;color:var(--ink-2)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Toronto · 1, 1+1 and 2 bedroom · leased, not asking</div>
+      <h1>Toronto Lease Ledger</h1>
+    </div>
+    <div class="stamp" id="stamp"></div>
+    <p class="lede" id="lede">Every 1, 1+1 and 2 bedroom lease that closed in the City of Toronto in 2025 and 2026 year to date, at the price it actually leased for. Pick a bedroom type, pick what to map, click a hex or a neighbourhood to focus everything on it.</p>
+  </header>
+
+  <div class="bar" role="toolbar" aria-label="Filters">
+    <div class="seg" id="segBtns" aria-label="Bedrooms">
+      <button data-s="all" aria-pressed="true">All three</button>
+      <button data-s="0" aria-pressed="false">1 bed</button>
+      <button data-s="1" aria-pressed="false">1+1</button>
+      <button data-s="2" aria-pressed="false">2 bed</button>
+    </div>
+    <label class="ctl">Type
+      <select id="typeSel"><option value="all">Any home</option><option value="condo" selected>Condos only</option><option value="other">Houses, basements, rentals in houses</option></select>
+    </label>
+    <label class="ctl">Parking
+      <select id="parkSel"><option value="any">Either</option><option value="1">With parking</option><option value="0">No parking</option></select>
+    </label>
+    <span id="selChip"></span>
+  </div>
+
+  <section class="kpis" id="kpis" aria-label="Headline figures by bedroom type"><div class="loading">Loading leases…</div></section>
+
+  <section class="stage">
+    <div class="mapcard">
+      <div class="maphead">
+        <h2 id="mapTitle">Heat map</h2>
+        <div class="metrics" id="metricBtns"></div>
+      </div>
+      <div class="canvaswrap" id="cw">
+        <canvas id="map" aria-label="Hexagon heat map of Toronto leases"></canvas>
+        <div class="maptools">
+          <button id="zin" aria-label="Zoom in">+</button>
+          <button id="zout" aria-label="Zoom out">−</button>
+          <button id="zreset" aria-label="Reset view">⟲</button>
+        </div>
+        <div class="tip" id="tip" hidden></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <aside class="side">
+      <div class="panel" id="detail"></div>
+      <div class="panel">
+        <div>
+          <div class="eyebrow">Rent check</div>
+          <h3 id="fairTitle">Is this rent fair?</h3>
+        </div>
+        <div class="fair">
+          <label>Bedrooms<select id="fSeg"><option value="0">1 bed</option><option value="1" selected>1+1</option><option value="2">2 bed</option></select></label>
+          <label>Parking<select id="fPk"><option value="any">Either</option><option value="1">Yes</option><option value="0">No</option></select></label>
+          <label>Size, ft² (optional)<input id="fSq" type="number" min="300" max="2000" step="10" placeholder="e.g. 620"></label>
+          <label>Rent asked, $/mo<input id="fAsk" type="number" min="800" max="9000" step="25" value="2500"></label>
+        </div>
+        <div id="fairOut"></div>
+      </div>
+    </aside>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <div><div class="eyebrow">Two years · every neighbourhood · HouseSigma market series, complete</div><h2>Where rents are moving</h2></div>
+      <span class="eyebrow" id="mkScope"></span>
+    </div>
+    <div class="strip" id="mkStrip"></div>
+    <div class="market">
+      <div class="panel">
+        <div><div class="eyebrow">City of Toronto · condo apartments · all bedroom types</div><h3 style="font-size:17px">Median condo rent, last 24 months</h3></div>
+        <div class="chart" id="mkLine"></div>
+        <div><div class="eyebrow">Supply and demand</div><h3 style="font-size:17px">Units listed for rent vs units leased, per month</h3></div>
+        <div class="chart" id="mkVol"></div>
+        <p class="note">HouseSigma's own monthly market figures for condo apartments, every bedroom type, all of the City of Toronto. Complete, not sampled.</p>
+      </div>
+      <div class="panel">
+        <div><div class="eyebrow">Last 3 months vs the same 3 months a year earlier</div><h3 style="font-size:17px">Supply moves first, rent follows</h3></div>
+        <div class="chart scatter" id="mkScatter"></div>
+        <p class="note" id="mkNote">Each dot is a neighbourhood with 120+ condo leases in the last year. Right of centre: more units listed than a year ago. Above centre: rents up. Bubble size: leases. Click a dot to focus the whole page on that neighbourhood.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline">
+        <div><div class="eyebrow" id="trendScope">Citywide</div><h2>Median leased rent by month</h2></div>
+        <div class="keys" id="trendKeys"></div>
+      </div>
+      <div class="chart" id="trend"></div>
+      <p class="note">Solid line: 2026. Dashed: the same month in 2025. Months with fewer than 12 leases in the current focus are left out.</p>
+    </div>
+    <div class="panel">
+      <div><div class="eyebrow">Same unit, re-leased</div><h2>What landlords got the second time</h2></div>
+      <p class="dim" id="repeatLede"></p>
+      <div class="chart" id="repeat"></div>
+    </div>
+  </section>
+
+  <section>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <h2>What the leases say</h2><span class="eyebrow" id="insScope">Citywide, current filters</span>
+    </div>
+    <div class="insights" id="insights"></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <h2>Neighbourhoods</h2>
+      <label class="ctl">Find <input id="q" type="search" placeholder="e.g. Mimico" style="background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:5px 8px"></label>
+    </div>
+    <div class="tablewrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    <p class="note">TRREB community boundaries. YoY compares 1 Jan to the as-of day in each year, bedroom mix held constant. Rows need 15+ leases in 2026. Click a row to focus the page on it.</p>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <h2>Busiest buildings</h2><span class="eyebrow" id="bScope">Citywide</span>
+    </div>
+    <div class="tablewrap" style="max-height:420px"><table id="btbl"><thead></thead><tbody></tbody></table></div>
+  </section>
+
+  <footer class="foot">
+    <div>Source: HouseSigma lease records (TRREB and ITSO boards), pulled through a personal account. Final leased price, not listing price. Cross-board duplicates of the same lease removed. Leases under $900 or over $9,000 dropped. Gross yield uses HouseSigma's current sale estimate for the unit and ignores fees and tax.</div>
+    <div id="counts"></div>
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+(() => {
+const R = window.RENT, L = R.L, N = L.p.length;
+const HAS25 = L.m.some(v => v < 12);
+const SEGN = ['1 bed', '1+1', '2 bed'];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = id => document.getElementById(id);
+const fmt$ = v => v == null || isNaN(v) ? '–' : '$' + Math.round(v).toLocaleString('en-CA');
+const pct = (v, d = 1) => v == null || isNaN(v) ? '–' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v * 100).toFixed(d) + '%';
+const med = a => { if (!a.length) return NaN; const s = Float64Array.from(a).sort(); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const q = (a, p) => { if (!a.length) return NaN; const s = Float64Array.from(a).sort(); const i = (s.length - 1) * p, lo = Math.floor(i); return s[lo] + (s[Math.min(lo + 1, s.length - 1)] - s[lo]) * (i - lo); };
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const lat = i => 43.5 + L.lat[i] / 1e4, lon = i => -79.7 + L.lon[i] / 1e4;
+const asOf = new Date(R.asOf + 'T12:00:00');
+const asOfM = 12 + asOf.getMonth();  // month index of as-of in 2026
+const recentFrom = (() => { const d = new Date(asOf); d.setDate(d.getDate() - 120); return (d.getFullYear() - 2025) * 12 + d.getMonth(); })();
+
+// ---------- state ----------
+const S = { segs: new Set([0, 1, 2]), type: 'condo', park: 'any', metric: 'rent', sel: null, hexR: 0.0042 };
+try { const m = localStorage.getItem('tll-metric'); if (m) S.metric = m; } catch (e) {}
+
+const passBase = i => S.segs.has(L.seg[i]) && (S.type === 'all' || (S.type === 'condo') === !!L.condo[i]) && (S.park === 'any' || String(L.pk[i]) === S.park);
+const inSel = i => !S.sel || (S.sel.kind === 'c' ? L.c[i] === S.sel.id : S.sel.set.has(i));
+const yr = i => L.m[i] < 12 ? 2025 : 2026;
+const ytd = i => L.d[i] <= R.cutDoy;
+
+// ---------- projection + hexes ----------
+const LAT0 = 43.72, KX = Math.cos(LAT0 * Math.PI / 180);
+const px = new Float32Array(N), py = new Float32Array(N);
+for (let i = 0; i < N; i++) { px[i] = (lon(i) + 79.4) * KX; py[i] = -(lat(i) - LAT0); }
+function hexKey(x, y, r) {
+  const qf = (Math.sqrt(3) / 3 * x - y / 3) / r, rf = (2 / 3 * y) / r;
+  let qx = Math.round(qf), rz = Math.round(rf), ry = Math.round(-qf - rf);
+  const dq = Math.abs(qx - qf), dr = Math.abs(rz - rf), ds = Math.abs(ry + qf + rf);
+  if (dq > dr && dq > ds) qx = -ry - rz; else if (dr > ds) rz = -qx - ry;
+  return qx + ',' + rz;
+}
+const hexCenter = (k, r) => { const [a, b] = k.split(',').map(Number); return [r * Math.sqrt(3) * (a + b / 2), r * 1.5 * b]; };
+
+// ---------- aggregation ----------
+function agg(ids) {  // ids: iterable of lease indices already passing base filter
+  const cur = [[], [], []], prev = [[], [], []], all26 = [], ppsf = [], dom = [], disc = [], under = [0, 0], yld = [], months = {};
+  for (const i of ids) {
+    const s = L.seg[i], p = L.p[i], y = yr(i);
+    if (y === 2026) {
+      cur[s].push(p); all26.push(p);
+      if (L.sq[i] > 0) ppsf.push(p / L.sq[i]);
+      if (L.dom[i] >= 0) dom.push(L.dom[i]);
+      if (L.a[i] > 0) { disc.push(p / L.a[i] - 1); under[1]++; if (p < L.a[i]) under[0]++; }
+      if (L.est[i] > 50 && L.condo[i]) yld.push(p * 12 / (L.est[i] * 1000));
+    } else if (ytd(i)) prev[s].push(p);
+  }
+  // mix-held YoY: per bedroom type ratio of medians, weighted by 2026 volume
+  let wsum = 0, lsum = 0;
+  for (let s = 0; s < 3; s++) if (cur[s].length >= 6 && prev[s].length >= 6) { const r = med(cur[s]) / med(prev[s]); wsum += cur[s].length; lsum += cur[s].length * Math.log(r); }
+  return { n: all26.length, cur, prev, rent: med(all26), yoy: wsum ? Math.exp(lsum / wsum) - 1 : NaN, ppsf: med(ppsf), dom: med(dom), disc: med(disc), under: under[1] >= 5 ? under[0] / under[1] : NaN, yld: yld.length >= 5 ? med(yld) : NaN };
+}
+// note: cur counts all of 2026 YTD; prev only 2025 up to the same day of year, so both windows match.
+
+const METRICS = {
+  rent: { label: 'Median rent', f: a => a.rent, fmt: fmt$, seq: true, desc: 'Median leased price, 2026 year to date' },
+  yoy: { label: 'Change vs 2025', f: a => a.yoy, fmt: v => pct(v), div: true, desc: 'Median leased price vs the same weeks of 2025, bedroom mix held constant' },
+  ppsf: { label: '$ per ft²', f: a => a.ppsf, fmt: v => isNaN(v) ? '–' : '$' + v.toFixed(2), seq: true, desc: 'Median monthly rent per square foot (listings with a size)' },
+  dom: { label: 'Days to lease', f: a => a.dom, fmt: v => isNaN(v) ? '–' : Math.round(v) + ' d', seq: true, desc: 'Median days from listing to signed lease' },
+  under: { label: 'Leased under asking', f: a => a.under, fmt: v => isNaN(v) ? '–' : Math.round(v * 100) + '%', seq: true, desc: 'Share of 2026 leases that closed below the asking rent' },
+  yld: { label: 'Gross yield', f: a => a.yld, fmt: v => isNaN(v) ? '–' : (v * 100).toFixed(2) + '%', seq: true, desc: 'Annual rent ÷ current sale estimate, condos only' },
+};
+if (!HAS25) { delete METRICS.yoy; if (S.metric === 'yoy') S.metric = 'rent'; }
+if (!METRICS[S.metric]) S.metric = 'rent';
+
+// ---------- colour ramps ----------
+const SEQ_L = ['#cde2fb','#b7d3f6','#9ec5f4','#86b6ef','#6da7ec','#5598e7','#3987e5','#2a78d6','#256abf','#1c5cab','#184f95','#104281','#0d366b'];
+const DIV_L = ['#1c5cab','#3987e5','#86b6ef','#cde2fb','@mid','#f7c9c4','#ee8f86','#e34948','#b3261e'];
+const isDark = () => document.documentElement.dataset.theme === 'dark' || (document.documentElement.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+function colorFor(metric, v, lo, hi) {
+  if (isNaN(v)) return null;
+  const M = METRICS[metric];
+  if (M.div) {
+    const t = Math.max(-1, Math.min(1, v / hi)); const idx = Math.round((t + 1) / 2 * (DIV_L.length - 1));
+    const c = DIV_L[idx]; return c === '@mid' ? css('--mid') : c;
+  }
+  const t = Math.max(0, Math.min(1, (v - lo) / (hi - lo || 1)));
+  const ramp = isDark() ? SEQ_L.slice().reverse() : SEQ_L;
+  return ramp[Math.round(t * (ramp.length - 1))];
+}
+
+// ---------- map ----------
+const cv = $('map'), ctx = cv.getContext('2d'), cw = $('cw'), tip = $('tip');
+let view = null, hexes = [], hexMap = new Map(), scale = [0, 1], hoverKey = null;
+const bbox = (() => { let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9; for (let i = 0; i < N; i++) { x0 = Math.min(x0, px[i]); x1 = Math.max(x1, px[i]); y0 = Math.min(y0, py[i]); y1 = Math.max(y1, py[i]); } return { x0, x1, y0, y1 }; })();
+function fitView() {
+  const w = cv.clientWidth, h = cv.clientHeight, pad = 18;
+  const k = Math.min((w - 2 * pad) / (bbox.x1 - bbox.x0), (h - 2 * pad) / (bbox.y1 - bbox.y0));
+  view = { k, tx: w / 2 - k * (bbox.x0 + bbox.x1) / 2, ty: h / 2 - k * (bbox.y0 + bbox.y1) / 2 };
+}
+function buildHexes() {
+  hexMap = new Map();
+  const r = S.hexR;
+  for (let i = 0; i < N; i++) {
+    if (!passBase(i)) continue;
+    const k = hexKey(px[i], py[i], r);
+    let h = hexMap.get(k); if (!h) { h = { k, ids: [] }; hexMap.set(k, h); } h.ids.push(i);
+  }
+  hexes = [];
+  for (const h of hexMap.values()) { h.a = agg(h.ids); if (h.a.n >= 5) { h.c = hexCenter(h.k, r); hexes.push(h); } }
+  setScale();
+}
+function setScale() {
+  const M = METRICS[S.metric], vals = hexes.map(h => M.f(h.a)).filter(v => !isNaN(v));
+  if (M.div) { const m = Math.max(Math.abs(q(vals, .05)), Math.abs(q(vals, .95)), 0.02); scale = [-m, m]; }
+  else scale = [q(vals, .05), q(vals, .95)];
+}
+function draw() {
+  const dpr = devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  if (!view) fitView();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  const r = S.hexR * view.k, M = METRICS[S.metric];
+  const gap = css('--lake');
+  for (const hx of hexes) {
+    const [cx, cy] = hx.c, X = view.k * cx + view.tx, Y = view.k * cy + view.ty;
+    if (X < -r || Y < -r || X > w + r || Y > h + r) continue;
+    const col = colorFor(S.metric, M.f(hx.a), scale[0], scale[1]);
+    ctx.beginPath();
+    for (let a = 0; a < 6; a++) { const ang = Math.PI / 180 * (60 * a - 30); const xx = X + (r - 0.6) * Math.cos(ang), yy = Y + (r - 0.6) * Math.sin(ang); a ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); }
+    ctx.closePath();
+    ctx.fillStyle = col || css('--rule-2'); ctx.globalAlpha = hx.a.n < 15 ? 0.55 : 1; ctx.fill(); ctx.globalAlpha = 1;
+    const selected = S.sel && ((S.sel.kind === 'h' && S.sel.key === hx.k) || (S.sel.kind === 'c' && hx.ids.some(i => L.c[i] === S.sel.id)));
+    if (selected || hoverKey === hx.k) { ctx.lineWidth = selected ? 2.2 : 1.5; ctx.strokeStyle = css('--ink'); ctx.stroke(); }
+    else { ctx.lineWidth = 1; ctx.strokeStyle = gap; ctx.stroke(); }
+  }
+  // neighbourhood labels: biggest communities, placed at their lease centroid
+  ctx.font = `600 ${Math.max(10, Math.min(12, view.k * 0.004))}px ${css('--body')}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const placed = [];
+  for (const c of labels) {
+    const X = view.k * c.x + view.tx, Y = view.k * c.y + view.ty;
+    if (X < 30 || X > w - 30 || Y < 12 || Y > h - 12) continue;
+    const tw = ctx.measureText(c.short).width + 8;
+    if (placed.some(p => Math.abs(p[0] - X) < (tw + p[2]) / 2 && Math.abs(p[1] - Y) < 15)) continue;
+    placed.push([X, Y, tw]);
+    ctx.lineWidth = 3; ctx.strokeStyle = css('--panel'); ctx.strokeText(c.short, X, Y);
+    ctx.fillStyle = css('--ink'); ctx.fillText(c.short, X, Y);
+    if (placed.length > 26 + (view.k > 9000 ? 20 : 0)) break;
+  }
+}
+// label centroids
+const labels = (() => {
+  const acc = {};
+  for (let i = 0; i < N; i++) { const c = L.c[i]; (acc[c] ||= { x: 0, y: 0, n: 0 }); acc[c].x += px[i]; acc[c].y += py[i]; acc[c].n++; }
+  const shorten = s => s.replace(/Waterfront Communities C1/, 'Waterfront').replace(/Waterfront Communities-the Island/, 'Waterfront').replace(/Bay Street Corridor/, 'Bay St').replace(/Church-Yonge Corridor/, 'Church-Yonge').replace(/ C\d+$| E\d+$| W\d+$/, '').replace(/-/g, '‑');
+  return Object.entries(acc).map(([c, v]) => ({ id: +c, x: v.x / v.n, y: v.y / v.n, n: v.n, short: shorten(R.communities[c]) })).sort((a, b) => b.n - a.n);
+})();
+
+function hexAt(mx, my) {
+  const x = (mx - view.tx) / view.k, y = (my - view.ty) / view.k;
+  const h = hexMap.get(hexKey(x, y, S.hexR)); return h && h.a.n >= 5 ? h : null;
+}
+function commName(h) { const cnt = {}; for (const i of h.ids) cnt[L.c[i]] = (cnt[L.c[i]] || 0) + 1; const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0]; return R.communities[top[0]]; }
+
+cv.addEventListener('mousemove', e => {
+  if (drag) return;
+  const rct = cv.getBoundingClientRect(), mx = e.clientX - rct.left, my = e.clientY - rct.top, h = hexAt(mx, my);
+  const k = h ? h.k : null;
+  if (k !== hoverKey) { hoverKey = k; draw(); }
+  if (!h) { tip.hidden = true; return; }
+  const a = h.a, M = METRICS[S.metric];
+  tip.innerHTML = `<div style="opacity:.8">${commName(h)}</div><div style="font-size:15px;margin:2px 0"><b>${M.fmt(M.f(a))}</b> ${M.label.toLowerCase()}</div>` +
+    `${a.n.toLocaleString()} leases in 2026 · median ${fmt$(a.rent)}<br>${HAS25 ? `vs 2025 <b>${pct(a.yoy)}</b> · ` : ''}${isNaN(a.dom) ? '–' : Math.round(a.dom)} days to lease`;
+  tip.hidden = false;
+  const tx = Math.min(mx + 14, cv.clientWidth - 250), ty = my + 14 > cv.clientHeight - 90 ? my - 96 : my + 14;
+  tip.style.left = tx + 'px'; tip.style.top = ty + 'px';
+});
+cv.addEventListener('mouseleave', () => { tip.hidden = true; if (hoverKey) { hoverKey = null; draw(); } });
+let drag = null, moved = false;
+cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty }; moved = false; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 4) moved = true; if (moved) { view.tx = drag.tx + dx; view.ty = drag.ty + dy; tip.hidden = true; draw(); } });
+cv.addEventListener('pointerup', e => {
+  const wasDrag = moved; drag = null;
+  if (wasDrag) return;
+  const rct = cv.getBoundingClientRect(), h = hexAt(e.clientX - rct.left, e.clientY - rct.top);
+  if (!h) { select(null); return; }
+  if (S.sel && S.sel.kind === 'h' && S.sel.key === h.k) select(null);
+  else select({ kind: 'h', key: h.k, set: new Set(h.ids.concat()), name: 'Hex near ' + commName(h), lat: -h.c[1] + LAT0, lon: h.c[0] / KX - 79.4 });
+});
+function zoom(f, mx, my) { mx ??= cv.clientWidth / 2; my ??= cv.clientHeight / 2; view.tx = mx - (mx - view.tx) * f; view.ty = my - (my - view.ty) * f; view.k *= f; draw(); }
+cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(); zoom(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+$('zin').onclick = () => zoom(1.4); $('zout').onclick = () => zoom(1 / 1.4); $('zreset').onclick = () => { fitView(); draw(); };
+new ResizeObserver(() => { const had = view; fitView(); draw(); }).observe(cw);
+
+function legend() {
+  const M = METRICS[S.metric];
+  let ramp, ticks;
+  if (M.div) { ramp = DIV_L.map(c => c === '@mid' ? css('--mid') : c); ticks = [pct(scale[0], 0), '0%', pct(scale[1], 0)]; }
+  else { ramp = isDark() ? SEQ_L.slice().reverse() : SEQ_L; ticks = [M.fmt(scale[0]), M.fmt((scale[0] + scale[1]) / 2), M.fmt(scale[1])]; }
+  $('legend').innerHTML = `<div><div class="ramp">${ramp.map(c => `<i style="background:${c}"></i>`).join('')}</div><div class="ticks num">${ticks.map(t => `<span>${t}</span>`).join('')}</div></div>` +
+    `<span>${M.desc}. Each hex is about 800 m across; faded hexes have under 15 leases. Scroll or use + − to zoom, drag to pan.</span>`;
+  $('mapTitle').textContent = M.label;
+}
+const buildMetricBtns = () => { $('metricBtns').innerHTML = Object.entries(METRICS).map(([k, m]) => `<button data-m="${k}" aria-pressed="${k === S.metric}">${m.label}</button>`).join(''); }; buildMetricBtns();
+$('metricBtns').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.metric = b.dataset.m; try { localStorage.setItem('tll-metric', S.metric); } catch (x) {} [...$('metricBtns').children].forEach(x => x.setAttribute('aria-pressed', x === b)); setScale(); legend(); draw(); };
+
+// ---------- selection ----------
+function selIds() { const out = []; for (let i = 0; i < N; i++) if (passBase(i) && inSel(i)) out.push(i); return out; }
+function select(sel) {
+  S.sel = sel;
+  $('selChip').innerHTML = sel ? `<span class="chip">${sel.name}<button id="clr" aria-label="Clear focus">×</button></span>` : '';
+  if (sel) $('clr').onclick = () => select(null);
+  [...document.querySelectorAll('#tbl tbody tr')].forEach(tr => tr.classList.toggle('sel', sel && sel.kind === 'c' && +tr.dataset.c === sel.id));
+  draw(); renderFocus();
+}
+
+// ---------- KPI strip ----------
+function kpis() {
+  const byS = [0, 1, 2].map(s => {
+    const cur = [], prev = [], disc = [], dom = [], under = [0, 0];
+    for (let i = 0; i < N; i++) {
+      if (L.seg[i] !== s || !inSel(i)) continue;
+      if (!(S.type === 'all' || (S.type === 'condo') === !!L.condo[i]) || !(S.park === 'any' || String(L.pk[i]) === S.park)) continue;
+      if (yr(i) === 2026) { cur.push(L.p[i]); if (L.a[i] > 0) { disc.push(L.p[i] / L.a[i] - 1); under[1]++; if (L.p[i] < L.a[i]) under[0]++; } if (L.dom[i] >= 0) dom.push(L.dom[i]); }
+      else if (ytd(i)) prev.push(L.p[i]);
+    }
+    const rp = repeatFor(s);
+    return { s, n: cur.length, m26: med(cur), m25: med(prev), n25: prev.length, disc: med(disc), under: under[1] ? under[0] / under[1] : NaN, dom: med(dom), rp };
+  });
+  $('kpis').innerHTML = byS.map(k => {
+    const ch = k.m26 / k.m25 - 1, cls = isNaN(ch) ? 'flat' : ch > 0.005 ? 'up' : ch < -0.005 ? 'down' : 'flat';
+    return `<div class="kpi ${S.segs.has(k.s) ? '' : 'off'}">
+      <div class="top"><span class="name"><span class="sw" style="background:var(--s${k.s})"></span>${SEGN[k.s]}</span><span class="pill ${cls}">${HAS25 ? pct(ch) + ' vs 2025' : '2025 comparison coming'}</span></div>
+      <div class="big">${fmt$(k.m26)}<span class="dim" style="font-size:13px;font-family:var(--body);letter-spacing:0"> median leased, 2026</span></div>
+      <dl><dt>Same weeks of 2025</dt><dd>${fmt$(k.m25)}</dd>
+      <dt>Same unit re-leased (${k.rp.n.toLocaleString()} units)</dt><dd>${pct(k.rp.med)}</dd>
+      <dt>Leased under asking</dt><dd>${isNaN(k.under) ? '–' : Math.round(k.under * 100) + '%'} · median ${pct(k.disc)}</dd>
+      <dt>Days to lease</dt><dd>${isNaN(k.dom) ? '–' : Math.round(k.dom)}</dd>
+      <dt>Leases 2026 / same weeks 2025</dt><dd>${k.n.toLocaleString()} / ${k.n25.toLocaleString()}</dd></dl></div>`;
+  }).join('');
+}
+function repeatFor(s) {
+  const P = R.pairs, ch = [];
+  for (let j = 0; j < P.p1.length; j++) {
+    if (s != null && P.seg[j] !== s) continue;
+    if (s == null && !S.segs.has(P.seg[j])) continue;
+    if (S.sel) {
+      if (S.sel.kind === 'c' && P.c[j] !== S.sel.id) continue;
+      if (S.sel.kind === 'h' && hexKey((P.lon[j] / 1e4 - 79.7 + 79.4) * KX, -(43.5 + P.lat[j] / 1e4 - LAT0), S.hexR) !== S.sel.key) continue;
+    }
+    ch.push(P.p2[j] / P.p1[j] - 1);
+  }
+  return { n: ch.length, med: med(ch), ch };
+}
+
+// ---------- detail panel ----------
+function renderDetail(ids) {
+  const a = agg(ids);
+  const title = S.sel ? S.sel.name : 'All of Toronto';
+  const rows = [0, 1, 2].filter(s => S.segs.has(s)).map(s => {
+    const m26 = med(a.cur[s]), m25 = med(a.prev[s]), ch = m26 / m25 - 1;
+    return `<span>${SEGN[s]}</span><span class="v">${fmt$(m26)}</span><span class="v ${ch > 0 ? 'up-t' : ch < 0 ? 'down-t' : ''}">${a.cur[s].length >= 6 && a.prev[s].length >= 6 ? pct(ch) : '–'}</span><span class="v dim">${a.cur[s].length}</span>`;
+  }).join('');
+  $('detail').innerHTML = `<div><div class="eyebrow">${S.sel ? 'Focus' : 'Citywide'}</div><h3 style="font-size:19px">${title}</h3></div>
+    <div class="rows"><span class="h">Bedrooms</span><span class="h v">Median</span><span class="h v">${HAS25 ? 'vs 2025' : ''}</span><span class="h v">Leases</span>${rows}</div>
+    <div class="rows" style="grid-template-columns:1fr auto">
+      <span>Rent per ft²</span><span class="v">${isNaN(a.ppsf) ? '–' : '$' + a.ppsf.toFixed(2)}</span>
+      <span>Days to lease</span><span class="v">${isNaN(a.dom) ? '–' : Math.round(a.dom)}</span>
+      <span>Leased under asking</span><span class="v">${isNaN(a.under) ? '–' : Math.round(a.under * 100) + '%'}</span>
+      <span>Typical discount off asking</span><span class="v">${pct(a.disc)}</span>
+      <span>Gross yield (condos)</span><span class="v">${isNaN(a.yld) ? '–' : (a.yld * 100).toFixed(2) + '%'}</span>
+    </div>
+    <p class="note">${S.sel ? 'Click the same hex or the × above to go back to the whole city.' : 'Click any hex on the map or a neighbourhood in the table to focus.'}</p>`;
+}
+
+// ---------- fair-rent check ----------
+function renderFair() {
+  const s = +$('fSeg').value, pk = $('fPk').value, sq = +$('fSq').value || 0, ask = +$('fAsk').value || 0;
+  let pool = [];
+  const scope = S.sel ? S.sel.name : 'all of Toronto';
+  for (let i = 0; i < N; i++) {
+    if (L.seg[i] !== s || L.m[i] < recentFrom || !inSel(i)) continue;
+    if (!(S.type === 'all' || (S.type === 'condo') === !!L.condo[i])) continue;
+    if (pk !== 'any' && String(L.pk[i]) !== pk) continue;
+    if (sq && !(L.sq[i] > 0 && Math.abs(L.sq[i] - sq) <= sq * 0.15)) continue;
+    pool.push(L.p[i]);
+  }
+  $('fairTitle').textContent = `Is this rent fair in ${S.sel ? S.sel.name.replace(/^Hex near /, 'the hex near ') : 'Toronto'}?`;
+  if (pool.length < 8) { $('fairOut').innerHTML = `<p class="note">Only ${pool.length} comparable leases in the last 120 days for ${scope}. Widen the focus, clear the size, or set parking to Either.</p>`; return; }
+  const p25 = q(pool, .25), p50 = q(pool, .5), p75 = q(pool, .75), lo = q(pool, .05), hi = q(pool, .95);
+  const rank = pool.filter(v => v < ask).length / pool.length;
+  const X = v => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
+  const verdict = ask <= p25 ? 'Cheap. Cheaper than three in four recent leases like it.' : ask <= p50 ? 'Fair, on the good side of the middle.' : ask <= p75 ? 'Above the middle. Room to negotiate.' : 'Expensive. Dearer than three in four recent leases like it.';
+  $('fairOut').innerHTML = `<div class="band" aria-hidden="true"><div class="track"></div><div class="iqr" style="left:${X(p25)}%;width:${X(p75) - X(p25)}%"></div><div class="med" style="left:${X(p50)}%"></div><div class="you" style="left:${X(ask)}%"></div></div>
+    <div class="ticks num" style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)"><span>${fmt$(lo)}</span><span>${fmt$(hi)}</span></div>
+    <div class="verdict">${fmt$(ask)} beats ${Math.round((1 - rank) * 100)}% of ${pool.length} comparable leases. ${verdict}</div>
+    <div class="rows" style="grid-template-columns:1fr auto"><span>Middle half of leases</span><span class="v">${fmt$(p25)} – ${fmt$(p75)}</span><span>Median</span><span class="v">${fmt$(p50)}</span></div>
+    <p class="note">Leases signed in the last 120 days in ${scope}${sq ? `, ${Math.round(sq * .85)}–${Math.round(sq * 1.15)} ft²` : ''}. Follows the map focus and the Type filter.</p>`;
+}
+['fSeg', 'fPk', 'fSq', 'fAsk'].forEach(id => $(id).addEventListener('input', renderFair));
+
+// ---------- trend chart ----------
+function renderTrend(ids) {
+  const W = 720, H = 300, m = { l: 56, r: 16, t: 14, b: 30 };
+  const series = [0, 1, 2].filter(s => S.segs.has(s)).map(s => {
+    const buck = Array.from({ length: 24 }, () => []);
+    for (const i of ids) if (L.seg[i] === s) buck[L.m[i]].push(L.p[i]);
+    return { s, v: buck.map(b => b.length >= 12 ? med(b) : NaN), n: buck.map(b => b.length) };
+  });
+  const all = series.flatMap(x => x.v).filter(v => !isNaN(v));
+  $('trendScope').textContent = S.sel ? S.sel.name : 'Citywide';
+  if (!all.length) { $('trend').innerHTML = '<p class="note">Not enough leases in this focus to draw monthly medians.</p>'; return; }
+  let y0 = Math.floor(Math.min(...all) / 100) * 100 - 100, y1 = Math.ceil(Math.max(...all) / 100) * 100 + 100;
+  const step = (y1 - y0) > 1600 ? 500 : (y1 - y0) > 700 ? 200 : 100;
+  y0 = Math.floor(y0 / step) * step; y1 = Math.ceil(y1 / step) * step;
+  const X = k => m.l + k / 11 * (W - m.l - m.r), Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * (H - m.t - m.b);
+  let g = '';
+  for (let v = y0; v <= y1; v += step) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--rule-2)"/><text x="${m.l - 8}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">$${v.toLocaleString()}</text>`;
+  MON.forEach((mn, k) => g += `<text x="${X(k)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">${mn}</text>`);
+  const path = (vals, off) => { let d = '', pen = false; for (let k = 0; k < 12; k++) { const v = vals[off + k]; if (isNaN(v) || (off === 12 && off + k > asOfM)) { pen = false; continue; } d += (pen ? 'L' : 'M') + X(k).toFixed(1) + ' ' + Y(v).toFixed(1); pen = true; } return d; };
+  let lines = '';
+  for (const sr of series) {
+    lines += `<path d="${path(sr.v, 0)}" fill="none" stroke="var(--s${sr.s})" stroke-width="2" stroke-dasharray="5 4" opacity=".75"/>`;
+    lines += `<path d="${path(sr.v, 12)}" fill="none" stroke="var(--s${sr.s})" stroke-width="2.4"/>`;
+    const lastK = [...Array(12).keys()].filter(k => 12 + k <= asOfM && !isNaN(sr.v[12 + k])).pop();
+    if (lastK != null) lines += `<circle cx="${X(lastK)}" cy="${Y(sr.v[12 + lastK])}" r="4.5" fill="var(--s${sr.s})" stroke="var(--panel)" stroke-width="2"/>`;
+  }
+  $('trend').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly median leased rent, 2026 vs 2025">${g}${lines}<line id="xh" y1="${m.t}" y2="${H - m.b}" stroke="var(--ink)" stroke-width="1" opacity="0"/><rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent" id="hit"/></svg><div class="tip" id="ttip" hidden></div>`;
+  $('trendKeys').innerHTML = series.map(sr => `<span><i style="border-color:var(--s${sr.s})"></i>${SEGN[sr.s]}</span>`).join('') + (HAS25 ? `<span><i class="dash" style="border-color:var(--muted)"></i>2025</span>` : '');
+  const svg = $('trend').querySelector('svg'), tt = $('ttip'), xh = svg.querySelector('#xh');
+  svg.querySelector('#hit').addEventListener('mousemove', e => {
+    const r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * W, k = Math.max(0, Math.min(11, Math.round((sx - m.l) / (W - m.l - m.r) * 11)));
+    xh.setAttribute('x1', X(k)); xh.setAttribute('x2', X(k)); xh.setAttribute('opacity', .35);
+    tt.innerHTML = `<div style="opacity:.8">${MON[k]}</div>` + series.map(sr => { const a = sr.v[k], b = sr.v[12 + k]; return `${SEGN[sr.s]}: <b>${12 + k <= asOfM ? fmt$(b) : '–'}</b> ${HAS25 ? `<span style="opacity:.75">(2025 ${fmt$(a)})</span>` : ''}${12 + k <= asOfM && !isNaN(a) && !isNaN(b) ? ' ' + pct(b / a - 1) : ''}`; }).join('<br>');
+    tt.hidden = false; const px_ = X(k) / W * r.width; tt.style.left = Math.min(px_ + 12, r.width - 250) + 'px'; tt.style.top = '8px';
+  });
+  svg.querySelector('#hit').addEventListener('mouseleave', () => { tt.hidden = true; xh.setAttribute('opacity', 0); });
+}
+
+// ---------- repeat-lease histogram ----------
+function renderRepeat() {
+  const r = repeatFor(null);
+  if (!HAS25) { $('repeatLede').textContent = 'This needs the 2025 leases, which are still being pulled. It will show how much the same units re-leased for, 2025 to 2026, with the unit mix taken out.'; $('repeat').innerHTML = ''; return; }
+  if (r.n < 10) { $('repeatLede').textContent = `Only ${r.n} units in this focus were leased in both 2025 and 2026. Widen the focus to see the spread.`; $('repeat').innerHTML = ''; return; }
+  const up = r.ch.filter(v => v > 0.005).length / r.n, dn = r.ch.filter(v => v < -0.005).length / r.n;
+  $('repeatLede').innerHTML = `${r.n.toLocaleString()} units were leased in 2025 and again in 2026, same bedrooms. The typical one re-leased for <b>${pct(r.med)}</b>. ${Math.round(dn * 100)}% went for less, ${Math.round(up * 100)}% for more. This strips out the mix of units on the market, so it is the cleanest read of rent direction.`;
+  const bins = []; for (let b = -0.25; b < 0.2499; b += 0.025) bins.push({ lo: b, n: 0 });
+  for (const v of r.ch) { const k = Math.max(0, Math.min(bins.length - 1, Math.floor((v + 0.25) / 0.025))); bins[k].n++; }
+  const W = 520, H = 230, m = { l: 36, r: 10, t: 10, b: 34 }, mx = Math.max(...bins.map(b => b.n));
+  const bw = (W - m.l - m.r) / bins.length;
+  let s = '';
+  const yt = mx > 200 ? 100 : mx > 80 ? 40 : mx > 30 ? 10 : 5;
+  for (let v = 0; v <= mx; v += yt) { const y = m.t + (1 - v / mx) * (H - m.t - m.b); s += `<line x1="${m.l}" x2="${W - m.r}" y1="${y}" y2="${y}" stroke="var(--rule-2)"/><text x="${m.l - 6}" y="${y}" font-size="10" text-anchor="end" dominant-baseline="middle" fill="var(--muted)" font-family="var(--mono)">${v}</text>`; }
+  bins.forEach((b, k) => {
+    const h = b.n / mx * (H - m.t - m.b), x = m.l + k * bw + 1, y = H - m.b - h, mid = b.lo + 0.0125;
+    const fill = Math.abs(mid) < 0.0125 ? 'var(--muted)' : mid > 0 ? 'var(--up)' : 'var(--down)';
+    s += `<rect x="${x}" y="${y}" width="${bw - 2}" height="${Math.max(h, 0)}" rx="2" fill="${fill}" opacity=".85"><title>${pct(b.lo, 1)} to ${pct(b.lo + 0.025, 1)}: ${b.n} units</title></rect>`;
+  });
+  [-0.2, -0.1, 0, 0.1, 0.2].forEach(t => { const x = m.l + (t + 0.25) / 0.5 * (W - m.l - m.r); s += `<text x="${x}" y="${H - 16}" font-size="11" text-anchor="middle" fill="var(--muted)" font-family="var(--mono)">${t === 0 ? '0%' : pct(t, 0)}</text>`; });
+  s += `<text x="${m.l}" y="${H - 2}" font-size="11" fill="var(--down)">◀ re-leased for less</text><text x="${W - m.r}" y="${H - 2}" font-size="11" text-anchor="end" fill="var(--up)">re-leased for more ▶</text>`;
+  $('repeat').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Distribution of rent change for units leased in both years">${s}</svg>`;
+}
+
+// ---------- insights (computed, citywide under current filters) ----------
+function renderInsights() {
+  const base = []; for (let i = 0; i < N; i++) if (passBase(i) && L.m[i] >= 12) base.push(i);
+  const byC = {};
+  for (const i of base) { const c = L.c[i]; (byC[c] ||= [[], [], [], [], []]); byC[c][L.seg[i]].push(L.p[i]); if (L.pk[i]) byC[c][3].push(i); else byC[c][4].push(i); }
+  // den premium: within each community, 1+1 median minus 1-bed median, weighted by volume
+  let dw = 0, ds = 0, dn = 0;
+  for (const v of Object.values(byC)) if (v[0].length >= 10 && v[1].length >= 10) { const w = Math.min(v[0].length, v[1].length); ds += w * (med(v[1]) - med(v[0])); dw += w; dn++; }
+  const den = dw ? ds / dw : NaN;
+  // parking premium: same community + same bedrooms
+  let pw = 0, ps = 0;
+  const groups = {};
+  for (const i of base) { const k = L.c[i] + '|' + L.seg[i]; (groups[k] ||= [[], []])[L.pk[i]].push(L.p[i]); }
+  for (const g of Object.values(groups)) if (g[0].length >= 10 && g[1].length >= 10) { const w = Math.min(g[0].length, g[1].length); ps += w * (med(g[1]) - med(g[0])); pw += w; }
+  const park = pw ? ps / pw : NaN;
+  // cheapest month to sign in 2025 (median across chosen beds, mix-held via seg-weighted index)
+  const mIdx = []; for (let k = 0; k < 12; k++) { let w = 0, l = 0; for (const s of S.segs) { const a = [], all = []; for (let i = 0; i < N; i++) if (passBase(i) && L.seg[i] === s && (HAS25 ? L.m[i] < 12 : L.m[i] >= 12 && L.m[i] < asOfM)) { all.push(L.p[i]); if (L.m[i] % 12 === k) a.push(L.p[i]); } if (a.length > 20) { w += a.length; l += a.length * Math.log(med(a) / med(all)); } } mIdx.push(w ? Math.exp(l / w) - 1 : NaN); }
+  const cheapK = mIdx.indexOf(Math.min(...mIdx.filter(v => !isNaN(v)))), dearK = mIdx.indexOf(Math.max(...mIdx.filter(v => !isNaN(v))));
+  // biggest movers
+  const big = tableRows().filter(r => r.n >= 40);
+  const rows = big.filter(r => !isNaN(r.yoy));
+  const fall = rows.slice().sort((a, b) => a.yoy - b.yoy)[0], rise = rows.slice().sort((a, b) => b.yoy - a.yoy)[0];
+  const soft = big.filter(r => !isNaN(r.under)).sort((a, b) => b.under - a.under)[0];
+  // yield vs rent: cheapest-to-buy relative to rent
+  const yrows = big.filter(r => !isNaN(r.yld)).sort((a, b) => b.yld - a.yld);
+  const byRent = tableRows().filter(r => r.n >= 40 && !isNaN(r.rent)).sort((a, b) => b.rent - a.rent);
+  const cards = [
+    !HAS25 && MK ? (() => { const mk = mkRows().sort((a, b) => a.yoy - b.yoy); const f = mk[0], r = mk.at(-1); return { fig: pct(f?.yoy), t: `Biggest drop: ${f?.name}`, p: `HouseSigma market series, condo rent in the last 3 months vs a year earlier. Listings there are ${pct(f?.sup, 0)}. Biggest rise: ${r?.name} at ${pct(r?.yoy)} with listings ${pct(r?.sup, 0)}. Priciest lease median this year: ${byRent[0]?.name} at ${fmt$(byRent[0]?.rent)}.` }; })() :
+    !HAS25 ? { fig: fmt$(byRent[0]?.rent), t: `Priciest: ${byRent[0]?.name}`, p: `Highest median leased rent among neighbourhoods with 40+ leases in 2026. Cheapest: ${byRent.at(-1)?.name} at ${fmt$(byRent.at(-1)?.rent)}. Year-over-year movers arrive with the 2025 data.` } :
+    { fig: pct(fall?.yoy), t: `Biggest drop: ${fall?.name}`, p: `Among neighbourhoods with 40+ leases this year, rents fell furthest here versus the same weeks of 2025, bedroom mix held constant. Biggest rise: ${rise?.name} at ${pct(rise?.yoy)}.` },
+    { fig: isNaN(den) ? '–' : '+' + fmt$(den), t: 'What the den is worth', p: `A 1+1 leases for this much more than a plain 1 bed in the same neighbourhood, averaged over ${dn} neighbourhoods with enough of both. Useful when a listing calls a nook a den.` },
+    { fig: isNaN(park) ? '–' : '+' + fmt$(park), t: 'What parking is worth', p: `Same neighbourhood, same bedrooms, with a spot versus without, 2026 leases. If a landlord charges more than this for a spot, you can decline it.` },
+    { fig: MON[cheapK] || '–', t: 'Cheapest month to sign', p: `${HAS25 ? 'In 2025' : 'So far in 2026 (January to last month)'}, leases signed in ${MON[cheapK]} came in ${pct(mIdx[cheapK])} against the year's median, and ${MON[dearK]} was dearest at ${pct(mIdx[dearK])}. Same bedroom mix.` },
+    { fig: soft ? Math.round(soft.under * 100) + '%' : '–', t: `Most room to negotiate: ${soft?.name}`, p: `Share of 2026 leases here that closed under the asking rent, the highest in the city. Median lease sat ${soft?.dom != null ? Math.round(soft.dom) : '–'} days before signing.` },
+    { fig: yrows[0] ? (yrows[0].yld * 100).toFixed(1) + '%' : '–', t: `Highest gross yield: ${yrows[0]?.name}`, p: `Annual rent divided by today's estimated sale value for condos here. Lowest: ${yrows.at(-1)?.name} at ${yrows.at(-1) ? (yrows.at(-1).yld * 100).toFixed(1) + '%' : '–'}. Higher yield means rent is high next to the price of buying.` },
+  ];
+  $('insights').innerHTML = cards.map(c => `<div class="ins"><div class="fig">${c.fig}</div><h3>${c.t}</h3><p>${c.p}</p></div>`).join('');
+}
+
+// ---------- tables ----------
+let sortKey = 'n', sortDir = -1;
+function tableRows() {
+  const byC = {};
+  for (let i = 0; i < N; i++) if (passBase(i)) (byC[L.c[i]] ||= []).push(i);
+  const pairsC = {}; const P = R.pairs;
+  for (let j = 0; j < P.p1.length; j++) if (S.segs.has(P.seg[j])) (pairsC[P.c[j]] ||= []).push(P.p2[j] / P.p1[j] - 1);
+  return Object.entries(byC).map(([c, ids]) => { const a = agg(ids); const rp = pairsC[c] || []; return { c: +c, name: R.communities[c], n: a.n, rent: a.rent, m0: med(a.cur[0]), m1: med(a.cur[1]), m2: med(a.cur[2]), yoy: a.yoy, rep: rp.length >= 8 ? med(rp) : NaN, ppsf: a.ppsf, dom: a.dom, under: a.under, disc: a.disc, yld: a.yld }; }).filter(r => r.n >= 15);
+}
+const COLS = [['name', 'Neighbourhood'], ['n', 'Leases 2026'], ['m0', '1 bed'], ['m1', '1+1'], ['m2', '2 bed'], ['yoy', 'vs 2025'], ['rep', 'Same unit'], ['ppsf', '$/ft²'], ['dom', 'Days'], ['under', 'Under ask'], ['yld', 'Yield']].filter(c => HAS25 || (c[0] !== 'yoy' && c[0] !== 'rep'));
+function renderTable() {
+  const qv = $('q').value.trim().toLowerCase();
+  let rows = tableRows().filter(r => !qv || r.name.toLowerCase().includes(qv));
+  rows.sort((a, b) => { const x = a[sortKey], y = b[sortKey]; if (typeof x === 'string') return sortDir * x.localeCompare(y); const nx = isNaN(x) ? -Infinity : x, ny = isNaN(y) ? -Infinity : y; return sortDir * (nx - ny); });
+  $('tbl').querySelector('thead').innerHTML = '<tr>' + COLS.map(([k, l]) => `<th data-k="${k}" ${k === sortKey ? `aria-sort="${sortDir > 0 ? 'ascending' : 'descending'}"` : ''}>${l}${k === sortKey ? (sortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('') + '</tr>';
+  const cl = v => isNaN(v) ? '' : v > 0.005 ? 'up-t' : v < -0.005 ? 'down-t' : '';
+  $('tbl').querySelector('tbody').innerHTML = rows.map(r => `<tr data-c="${r.c}" class="${S.sel && S.sel.kind === 'c' && S.sel.id === r.c ? 'sel' : ''}"><td>${r.name}</td><td>${r.n.toLocaleString()}</td><td>${fmt$(r.m0)}</td><td>${fmt$(r.m1)}</td><td>${fmt$(r.m2)}</td>${HAS25 ? `<td class="${cl(r.yoy)}">${pct(r.yoy)}</td><td class="${cl(r.rep)}">${pct(r.rep)}</td>` : ''}<td>${isNaN(r.ppsf) ? '–' : '$' + r.ppsf.toFixed(2)}</td><td>${isNaN(r.dom) ? '–' : Math.round(r.dom)}</td><td>${isNaN(r.under) ? '–' : Math.round(r.under * 100) + '%'}</td><td>${isNaN(r.yld) ? '–' : (r.yld * 100).toFixed(1) + '%'}</td></tr>`).join('');
+}
+$('tbl').addEventListener('click', e => {
+  const th = e.target.closest('th'); if (th) { const k = th.dataset.k; if (k === sortKey) sortDir *= -1; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; } renderTable(); return; }
+  const tr = e.target.closest('tr[data-c]'); if (!tr) return; const c = +tr.dataset.c;
+  if (S.sel && S.sel.kind === 'c' && S.sel.id === c) select(null); else { select({ kind: 'c', id: c, name: R.communities[c] }); $('cw').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); }
+});
+$('q').addEventListener('input', renderTable);
+
+function renderBuildings(ids) {
+  const byB = {};
+  for (const i of ids) if (yr(i) === 2026) (byB[L.b[i]] ||= []).push(i);
+  const rows = Object.entries(byB).map(([b, is]) => {
+    const p = is.map(i => L.p[i]), pp = is.filter(i => L.sq[i] > 0).map(i => L.p[i] / L.sq[i]), d = is.filter(i => L.a[i] > 0).map(i => L.p[i] / L.a[i] - 1), dom = is.filter(i => L.dom[i] >= 0).map(i => L.dom[i]);
+    const segs = [0, 1, 2].map(s => is.filter(i => L.seg[i] === s).map(i => L.p[i]));
+    return { name: R.buildings[b], c: R.communities[L.c[is[0]]], n: is.length, m: med(p), s0: segs[0].length >= 3 ? med(segs[0]) : NaN, s1: segs[1].length >= 3 ? med(segs[1]) : NaN, s2: segs[2].length >= 3 ? med(segs[2]) : NaN, pp: med(pp), d: med(d), dom: med(dom) };
+  }).filter(r => r.n >= 5).sort((a, b) => b.n - a.n).slice(0, 40);
+  $('bScope').textContent = (S.sel ? S.sel.name : 'Citywide') + ' · top 40 by 2026 leases';
+  $('btbl').querySelector('thead').innerHTML = '<tr><th>Building</th><th>Leases</th><th>1 bed</th><th>1+1</th><th>2 bed</th><th>$/ft²</th><th>vs asking</th><th>Days</th></tr>';
+  $('btbl').querySelector('tbody').innerHTML = rows.map(r => `<tr style="cursor:default"><td>${r.name}<div class="note">${r.c}</div></td><td>${r.n}</td><td>${fmt$(r.s0)}</td><td>${fmt$(r.s1)}</td><td>${fmt$(r.s2)}</td><td>${isNaN(r.pp) ? '–' : '$' + r.pp.toFixed(2)}</td><td>${pct(r.d)}</td><td>${isNaN(r.dom) ? '–' : Math.round(r.dom)}</td></tr>`).join('') || '<tr><td colspan="8">No building has 5+ leases in this focus.</td></tr>';
+}
+
+// ---------- market layer (HouseSigma monthly series, complete) ----------
+const MK = window.MARKET || null;
+const mkByName = {}; if (MK) for (const [n, c] of Object.entries(MK.comm)) mkByName[n] = c;
+const mkOf = cid => MK ? mkByName[R.communities[cid]] : null;
+const num = v => { const n = parseFloat(v); return isNaN(n) ? NaN : n; };
+const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN;
+function mkYoY(arr, k = 3) { const a = arr.slice(-k).filter(v => !isNaN(v)), b = arr.slice(-12 - k, -12).filter(v => !isNaN(v)); return a.length >= 2 && b.length >= 2 ? mean(a) / mean(b) - 1 : NaN; }
+function mkRows() {
+  return Object.entries(MK.comm).map(([name, c]) => {
+    const rent = c.rent.map(num), lst = c.listings.map(num), led = c.leased.map(num);
+    const n12 = led.slice(-12).reduce((x, y) => x + (y || 0), 0);
+    return { name, yoy: mkYoY(rent), sup: mkYoY(lst), now: mean(rent.slice(-3).filter(v => !isNaN(v))), n12, cid: R.communities.indexOf(name), muni: c.muni };
+  }).filter(r => r.n12 >= 120 && !isNaN(r.yoy) && !isNaN(r.sup));
+}
+function renderMarket() {
+  if (!MK) return;
+  const P = MK.periods, rent = MK.city.rent.map(num), led = MK.city.leased.map(num), lst = MK.city.listings.map(num), dom = MK.city.dom.map(num);
+  const last = P.length - 1, lbl = p => { const [y, m] = p.split('-'); return MON[+m - 1] + (m === '01' || p === P[0] ? ' ’' + y.slice(2) : ''); };
+  const rows = mkRows(), up = rows.filter(r => r.yoy > 0.005).length, dn = rows.filter(r => r.yoy < -0.005).length;
+  const cityYoY = mkYoY(rent), supYoY = mkYoY(lst), ledYoY = mkYoY(led);
+  const pk = rent.reduce((b, v, i) => v > rent[b] ? i : b, 0), tr = rent.reduce((b, v, i) => v < rent[b] ? i : b, 0);
+  $('mkScope').textContent = `${P[0].replace('-', '/')} to ${P[last].replace('-', '/')} · ${Object.keys(MK.comm).length} neighbourhoods`;
+  $('mkStrip').innerHTML = [
+    [fmt$(mean(rent.slice(-3))), `Median condo rent, last 3 months · <span class="${cityYoY > 0.005 ? 'up-t' : cityYoY < -0.005 ? 'down-t' : ''}">${pct(cityYoY)}</span> vs a year earlier`],
+    [pct(supYoY), `Units listed for rent vs a year earlier · leased ${pct(ledYoY)}`],
+    [`${dn} of ${rows.length}`, `Neighbourhoods where rent is lower than a year ago · ${up} higher`],
+    [`${fmt$(rent[pk])} → ${fmt$(rent[tr])}`, `Two-year high (${lbl(P[pk])}) and low (${lbl(P[tr])}) of the citywide median`],
+  ].map(([v, l]) => `<div><span class="v">${v}</span><span class="l">${l}</span></div>`).join('');
+  // line: rent
+  { const W = 720, H = 220, m = { l: 56, r: 16, t: 14, b: 28 }, vals = rent.filter(v => !isNaN(v));
+    let y0 = Math.floor(Math.min(...vals) / 50) * 50 - 50, y1 = Math.ceil(Math.max(...vals) / 50) * 50 + 50;
+    const X = k => m.l + k / last * (W - m.l - m.r), Y = v => m.t + (1 - (v - y0) / (y1 - y0)) * (H - m.t - m.b);
+    let g = ''; for (let v = y0; v <= y1; v += 50) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--rule-2)"/><text x="${m.l - 8}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">$${v.toLocaleString()}</text>`;
+    P.forEach((p, k) => { if (k % 3 === 0) g += `<text x="${X(k)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">${lbl(p)}</text>`; });
+    // shade the same 3-month windows compared in the strip
+    g += `<rect x="${X(last - 14)}" y="${m.t}" width="${X(last - 12) - X(last - 14)}" height="${H - m.t - m.b}" fill="var(--accent-soft)" opacity=".6"/><rect x="${X(last - 2)}" y="${m.t}" width="${X(last) - X(last - 2)}" height="${H - m.t - m.b}" fill="var(--accent-soft)" opacity=".6"/>`;
+    let d = ''; rent.forEach((v, k) => { if (!isNaN(v)) d += (d ? 'L' : 'M') + X(k).toFixed(1) + ' ' + Y(v).toFixed(1); });
+    const area = d + `L${X(last)} ${Y(y0)}L${X(0)} ${Y(y0)}Z`;
+    let line = `<path d="${area}" fill="var(--accent)" opacity=".08"/><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2.4"/><circle cx="${X(last)}" cy="${Y(rent[last])}" r="4.5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>`;
+    line += `<text x="${X(last) - 8}" y="${Y(rent[last]) - 10}" text-anchor="end" font-size="12" font-weight="600" fill="var(--ink)" font-family="var(--mono)">${fmt$(rent[last])}</text>`;
+    $('mkLine').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Citywide median condo rent by month, two years">${g}${line}<line id="mkxh" y1="${m.t}" y2="${H - m.b}" stroke="var(--ink)" opacity="0"/><rect id="mkhit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent"/></svg><div class="tip" id="mktip" hidden></div>`;
+    const svg = $('mkLine').querySelector('svg'), tt = $('mktip'), xh = svg.querySelector('#mkxh');
+    svg.querySelector('#mkhit').addEventListener('mousemove', e => { const r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * W, k = Math.max(0, Math.min(last, Math.round((sx - m.l) / (W - m.l - m.r) * last))); xh.setAttribute('x1', X(k)); xh.setAttribute('x2', X(k)); xh.setAttribute('opacity', .35); const yo = k >= 12 ? rent[k] / rent[k - 12] - 1 : NaN; tt.innerHTML = `<div style="opacity:.8">${P[k]}</div>Median rent <b>${fmt$(rent[k])}</b>${isNaN(yo) ? '' : ' · ' + pct(yo) + ' y/y'}<br>${led[k]} leased · ${lst[k]} listed · ${dom[k]} days`; tt.hidden = false; tt.style.left = Math.min(X(k) / W * r.width + 12, r.width - 230) + 'px'; tt.style.top = '6px'; });
+    svg.querySelector('#mkhit').addEventListener('mouseleave', () => { tt.hidden = true; xh.setAttribute('opacity', 0); });
+  }
+  // bars: listings vs leased
+  { const W = 720, H = 170, m = { l: 56, r: 16, t: 10, b: 26 }, mx = Math.ceil(Math.max(...lst.filter(v => !isNaN(v))) / 1000) * 1000;
+    const X = k => m.l + k / (P.length) * (W - m.l - m.r), bw = (W - m.l - m.r) / P.length, Y = v => m.t + (1 - v / mx) * (H - m.t - m.b);
+    let g = ''; for (let v = 0; v <= mx; v += 2000) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--rule-2)"/><text x="${m.l - 8}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">${v.toLocaleString()}</text>`;
+    P.forEach((p, k) => { if (k % 3 === 0) g += `<text x="${X(k) + bw / 2}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">${lbl(p)}</text>`; });
+    let b = ''; P.forEach((p, k) => { b += `<rect x="${X(k) + 1}" y="${Y(lst[k])}" width="${bw - 2}" height="${Y(0) - Y(lst[k])}" fill="var(--rule)" rx="2"><title>${p}: ${lst[k]} listed, ${led[k]} leased</title></rect><rect x="${X(k) + 1}" y="${Y(led[k])}" width="${bw - 2}" height="${Y(0) - Y(led[k])}" fill="var(--accent)" opacity=".85" rx="2"><title>${p}: ${lst[k]} listed, ${led[k]} leased</title></rect>`; });
+    $('mkVol').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Units listed for rent and units leased per month">${g}${b}</svg><div class="keys"><span><i style="border-color:var(--rule);border-top-width:8px"></i>Listed for rent</span><span><i style="border-color:var(--accent);border-top-width:8px"></i>Leased</span></div>`;
+  }
+  // scatter: supply change vs rent change
+  { const W = 520, H = 400, m = { l: 48, r: 14, t: 18, b: 36 };
+    const xs = rows.map(r => r.sup), ys = rows.map(r => r.yoy);
+    const xm = Math.min(1.0, Math.max(0.3, Math.max(...xs.map(Math.abs)))), ym = Math.max(0.08, Math.min(0.2, Math.max(...ys.map(Math.abs))));
+    const X = v => m.l + (Math.max(-xm, Math.min(xm, v)) + xm) / (2 * xm) * (W - m.l - m.r), Y = v => m.t + (1 - (Math.max(-ym, Math.min(ym, v)) + ym) / (2 * ym)) * (H - m.t - m.b);
+    let g = `<line x1="${X(0)}" x2="${X(0)}" y1="${m.t}" y2="${H - m.b}" stroke="var(--rule)"/><line x1="${m.l}" x2="${W - m.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--rule)"/>`;
+    [-xm, -xm / 2, 0, xm / 2, xm].forEach(v => g += `<text x="${X(v)}" y="${H - 14}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">${pct(v, 0)}</text>`);
+    [-ym, -ym / 2, 0, ym / 2, ym].forEach(v => g += `<text x="${m.l - 6}" y="${Y(v)}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="var(--muted)" font-family="var(--mono)">${pct(v, 0)}</text>`);
+    g += `<text class="quad" x="${W - m.r}" y="${m.t + 10}" text-anchor="end">more listings · rent up</text><text class="quad" x="${W - m.r}" y="${H - m.b - 6}" text-anchor="end">more listings · rent down</text><text class="quad" x="${m.l + 4}" y="${m.t + 10}">fewer listings · rent up</text><text class="quad" x="${m.l + 4}" y="${H - m.b - 6}">fewer listings · rent down</text>`;
+    g += `<text x="${(m.l + W - m.r) / 2}" y="${H - 2}" text-anchor="middle" font-size="11" fill="var(--ink-2)">units listed for rent, change vs a year ago</text>`;
+    const maxN = Math.max(...rows.map(r => r.n12));
+    let dots = ''; for (const r of rows.slice().sort((a, b) => b.n12 - a.n12)) { const rr = 4 + Math.sqrt(r.n12 / maxN) * 22, col = r.yoy > 0.005 ? 'var(--up)' : r.yoy < -0.005 ? 'var(--down)' : 'var(--muted)'; dots += `<circle data-c="${r.cid}" cx="${X(r.sup)}" cy="${Y(r.yoy)}" r="${rr}" fill="${col}" fill-opacity=".55" stroke="var(--panel)" stroke-width="1.5"><title>${r.name}: rent ${pct(r.yoy)}, listings ${pct(r.sup)}, ${r.n12.toLocaleString()} leases in 12 months, median ${fmt$(r.now)}</title></circle>`; }
+    const labelled = rows.slice().sort((a, b) => (Math.abs(b.yoy) + Math.abs(b.sup) / 6) - (Math.abs(a.yoy) + Math.abs(a.sup) / 6)).slice(0, 9);
+    let lab = ''; for (const r of labelled) lab += `<text x="${X(r.sup) + 8}" y="${Y(r.yoy) - 6}" font-size="11" fill="var(--ink)" font-family="var(--body)" paint-order="stroke" stroke="var(--panel)" stroke-width="3">${r.name.replace(/ Communities C\d+$/, ' C').replace('Dovercourt-Wallace Emerson-Junction', 'Dovercourt-Junction').replace('North St. James Town', 'N St. James Town')}</text>`;
+    $('mkScatter').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Neighbourhoods: change in listings versus change in rent, last three months against a year earlier">${g}${dots}${lab}</svg>`;
+    $('mkScatter').querySelector('svg').addEventListener('click', e => { const c = e.target.closest('circle'); if (!c) return; const cid = +c.dataset.c; if (cid < 0) return; select({ kind: 'c', id: cid, name: R.communities[cid] }); $('cw').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); });
+  }
+}
+// map metric from the market series: a hex takes its dominant community's 12-month change
+if (MK) METRICS.mkyoy = { label: '12-mo change, market series', f: a => a.mkyoy, fmt: v => pct(v), div: true, desc: 'HouseSigma monthly market series: condo rent in the hex\'s neighbourhood, last 3 months vs a year earlier. Complete data, all bedroom types' };
+buildMetricBtns();
+const _agg = agg;
+agg = function (ids) { const a = _agg(ids); if (MK) { const cnt = {}; for (const i of ids) cnt[L.c[i]] = (cnt[L.c[i]] || 0) + 1; const top = Object.entries(cnt).sort((x, y) => y[1] - x[1])[0]; const c = top ? mkOf(+top[0]) : null; a.mkyoy = c ? mkYoY(c.rent.map(num)) : NaN; } return a; };
+
+// ---------- orchestration ----------
+function renderFocus() { const ids = selIds(); kpis(); renderDetail(ids); renderTrend(ids); renderRepeat(); renderFair(); renderBuildings(ids); }
+function renderAll() { buildHexes(); legend(); draw(); renderFocus(); renderInsights(); renderTable(); renderMarket(); }
+
+$('segBtns').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  S.segs = b.dataset.s === 'all' ? new Set([0, 1, 2]) : new Set([+b.dataset.s]);
+  [...$('segBtns').children].forEach(x => x.setAttribute('aria-pressed', x === b));
+  if (b.dataset.s !== 'all') $('fSeg').value = b.dataset.s;
+  renderAll();
+};
+$('typeSel').onchange = e => { S.type = e.target.value; renderAll(); };
+$('parkSel').onchange = e => { S.park = e.target.value; renderAll(); };
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { legend(); draw(); });
+new MutationObserver(() => { legend(); draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+const n25 = L.m.filter(v => v < 12).length, n26 = N - n25;
+$('stamp').innerHTML = `As of ${asOf.toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' })}<br>${n26.toLocaleString()} leases in 2026 · ${HAS25 ? n25.toLocaleString() + ' in 2025' : '2025 data loading'}`;
+if (!HAS25) { $('lede').textContent = 'Every 1, 1+1 and 2 bedroom lease that closed in the City of Toronto in 2026 so far, at the price it actually leased for. This first edition covers 2026 only; the 2025 comparison is being pulled now and will fill in the year-over-year figures. Pick a bedroom type, pick what to map, click a hex or a neighbourhood to focus everything on it.'; document.querySelector('#trend + .note').textContent = 'Monthly median of 2026 leases. Months with fewer than 12 leases in the current focus are left out. 2025 lines arrive with the next update.'; }
+$('counts').textContent = `${N.toLocaleString()} leases across ${R.communities.length} TRREB communities${HAS25 ? `; ${R.pairs.p1.length.toLocaleString()} units leased in both years` : ''}. 2026 runs 1 January to ${R.asOf}; every year-over-year figure compares against 1 January to the same day of 2025.`;
+renderAll();
+})();
+</script>

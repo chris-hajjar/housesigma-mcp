@@ -1,0 +1,9 @@
+data/
+test/
+node_modules/.cache/
+*.mcpb
+.gitignore
+*.md
+!README.md
+analysis/
+docs/

@@ -1,0 +1,20 @@
+const { post } = require('../../src/hs/client');
+const { authProvider } = require('../../src/hs/session');
+const short = (o, n = 400) => String(JSON.stringify(o) ?? 'undefined').slice(0, n);
+(async () => {
+  const P = (p, b) => post(p, b, authProvider).then(d => short(d), e => `ERR ${e.message}`);
+  console.log('watch/list lt=2      ', await P('/user/watch/list', { page: 1, list_type: 2 }));
+  console.log('watch/list lt=1      ', await P('/user/watch/list', { page: 1, list_type: 1 }));
+  console.log('watch/list lt=[1,2]  ', await P('/user/watch/list', { page: 1, list_type: [1, 2] }));
+  console.log('watch/all lt=2       ', await P('/user/watch/all', { list_type: 2 }));
+  console.log('watchlist/listings 1 ', await P('/user/watchlist/listings', { id_user_watchlist: 1, page: 1, list_type: 2 }));
+  console.log('watchlist/listings 1b', await P('/user/watchlist/listings', { id_user_watchlist: 1, page: 1 }));
+  console.log('watchlist/listingids ', await P('/user/watchlist/listingids', {}));
+  for (const cat of ['listing', 'sale', 'rent', 'map', 'precon', 1, 2]) console.log(`mapfilter/list ${cat}`.padEnd(22), await P('/user/mapfilter/list', { category: cat }));
+  const { rawPost } = require('../../src/hs/client');
+  const auth = await authProvider.get();
+  const env = await rawPost('/listing/nearby/rent', { id_listing: 'Zaw5YojE24L3n961' }, auth);
+  console.log('nearby/rent raw      ', env.status, short(env.error), short(env.data, 600));
+  const env2 = await rawPost('/listing/nearby/sold', { id_listing: 'Zaw5YojE24L3n961' }, auth);
+  console.log('nearby/sold raw      ', env2.status, (env2.data?.nearby || []).length);
+})().catch(e => { console.error(e); process.exit(1); });
