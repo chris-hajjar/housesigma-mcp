@@ -2,6 +2,7 @@
 'use strict';
 const { z } = require('zod');
 const { getSession } = require('../hs/session');
+const { makeLink } = require('../hs/remote_login');
 const { getBundle } = require('../hs/bundle');
 const { json, jsonError, withApi } = require('./util');
 
@@ -10,13 +11,27 @@ const BLOCKED = ['/auth/', '/user/profile', '/user/signup', '/user/join', '/user
 function register(server) {
   server.registerTool('login', {
     title: 'Login',
-    description: 'Sign in to HouseSigma. Reuses your saved session; otherwise opens Chrome for a Google sign-in (watch for the window). Or pass access_token to skip the browser.',
+    description: 'Sign in to HouseSigma. Reuses your saved session. Otherwise: locally, opens Chrome for a Google sign-in; when hosted, returns a one-time sign-in link to give the user. Or pass access_token to skip the browser.',
     inputSchema: {
       access_token: z.string().optional().describe('Token copied from the browser, to skip the login window.'),
       force: z.boolean().optional().describe('Sign in again even if a session is saved.'),
     },
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
   }, async (p) => {
+    // Hosted: no browser on the server. Hand back a link the user opens on their phone or computer.
+    if (makeLink() && !p.access_token) {
+      if (!p.force) {
+        try {
+          const s = await getSession();
+          return json({ signed_in: true, as: [s.user?.name, s.user?.email].filter(Boolean).join(' · '), province: s.province, session: 'saved' });
+        } catch { /* not signed in: fall through to the link */ }
+      }
+      return json({
+        signed_in: false,
+        link: makeLink(),
+        tell_user: 'Open this link (good for 15 minutes), sign in on HouseSigma as usual, then tap the "Send to MCP" bookmark. First time, the page shows how to save that bookmark. Then try again.',
+      });
+    }
     try {
       const s = await getSession({ force: !!p.force, access_token: p.access_token, interactive: true });
       const b = await getBundle();
