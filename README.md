@@ -22,9 +22,22 @@ claude mcp add housesigma -- node ~/Desktop/housesigma-mcp/bin/stdio.js
 
 **Claude Desktop**: `npm run pack` -> double-click `housesigma-mcp-<version>.mcpb`.
 
-**Remote (later)**: `MCP_BEARER=<secret> HS_ACCESS_TOKEN=<token> node bin/http.js` then
-`claude mcp add --transport http housesigma http://host:8787/mcp --header "Authorization: Bearer <secret>"`.
-Run `login` locally first and copy the token from `data/session.json`.
+**Remote (Railway)**: connects like a normal connector — paste the URL, click Connect, type your password.
+
+1. New Railway service from this GitHub repo. `railway.json` sets the start command (`node bin/http.js`)
+   and the `/health` check. Leave app sleeping off: pulls run for up to ~30 min inside the process.
+2. Add a volume mounted at `/data`.
+3. Variables: `MCP_PASSWORD` (long, random), `HS_DATA_DIR=/data`, optionally `MCP_BEARER` (fixed token for
+   headless clients like OpenClaw) and `HS_ACCESS_TOKEN`. `PUBLIC_URL` defaults to Railway's public domain;
+   set it if you use a custom domain.
+4. Generate a public domain in Railway's networking settings.
+5. claude.ai / Claude Desktop: Settings → Connectors → add custom connector → `https://<domain>/mcp` → Connect.
+   Headless: send `Authorization: Bearer <MCP_BEARER>` to `https://<domain>/mcp`.
+6. HouseSigma sign-in can't open a browser on a server: run `login` locally, copy `token` from
+   `data/session.json`, and call the remote `login` tool with `access_token` once (or set `HS_ACCESS_TOKEN`).
+
+Sign-ins are kept in `data/oauth.json` (token hashes only), so redeploys don't disconnect you.
+Changing `MCP_PASSWORD` doesn't sign out existing connections; delete `oauth.json` to do that.
 
 ## First use
 
