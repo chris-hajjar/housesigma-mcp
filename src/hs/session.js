@@ -18,6 +18,9 @@ const { rawPost } = require('./client');
 let mem = null; // { token, userId, user, secret, province, saved_at, source, ua }
 let capturedUa = null;
 function setUserAgent(ua) { capturedUa = ua; defaults.userAgent = ua; }
+// HouseSigma serves sold/leased details only when requests carry the same browser identity the session
+// signed in with. Hosted, there is no login browser, so take it from HS_USER_AGENT (or from the hand-off page).
+if (process.env.HS_USER_AGENT) setUserAgent(process.env.HS_USER_AGENT);
 
 function load() {
   try { return JSON.parse(fs.readFileSync(paths.session, 'utf8')); } catch { return null; }
@@ -121,6 +124,7 @@ async function getSession(opts = {}) {
   if (mem && !opts.force && !opts.access_token) return mem;
 
   if (opts.access_token) {
+    if (opts.ua) setUserAgent(opts.ua);
     const chk = await checkBound(opts.access_token, { tries: 3 });
     if (!chk.valid || !chk.bound) throw new Error(`That access_token is ${chk.valid ? 'not signed in (anonymous)' : `invalid (${chk.error?.message || 'rejected'})`}.`);
     mem = toSession(opts.access_token, chk, 'pasted'); save(mem); return mem;
@@ -134,7 +138,7 @@ async function getSession(opts = {}) {
   }
 
   const cached = opts.force ? null : load();
-  if (cached?.ua) setUserAgent(cached.ua);
+  if (cached?.ua) setUserAgent(cached.ua); // the identity saved with the session wins over HS_USER_AGENT
   if (cached?.token) {
     const chk = await check(cached.token);
     if (chk.valid && chk.bound) { mem = { ...toSession(cached.token, chk, 'cached'), saved_at: cached.saved_at }; save(mem); return mem; }
@@ -170,4 +174,4 @@ async function anonymousAuth() {
   return { token: env.data.access_token, secret: env.data.secret, province: defaults.province };
 }
 
-module.exports = { getSession, check, checkBound, clear, authProvider, anonymousAuth };
+module.exports = { getSession, check, checkBound, clear, authProvider, anonymousAuth, setUserAgent };
