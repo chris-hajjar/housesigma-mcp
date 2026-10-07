@@ -81,14 +81,15 @@ function mountRemoteLogin(app, { publicUrl }) {
     res.type('html').send(receivePage());
   });
 
-  app.post('/hs/receive', express.json({ limit: '2kb' }), async (req, res) => {
+  app.post('/hs/receive', express.json({ limit: '4kb' }), async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     const grant = grantOf(req);
     if (!grant) return res.status(403).json({ ok: false, error: 'This hand-off isn\'t authorized. Open the sign-in link from Claude first (it lasts 15 minutes), then tap the bookmark again.' });
     const token = String(req.body?.token || '').trim();
     if (!/^[A-Za-z0-9._-]{10,200}$/.test(token)) return res.status(400).json({ ok: false, error: 'No HouseSigma session found. Sign in on housesigma.com, then tap the bookmark again.' });
     try {
-      const s = await getSession({ access_token: token });
+      const ua = String(req.body?.ua || req.headers['user-agent'] || '').slice(0, 400);
+      const s = await getSession({ access_token: token, ua: ua || undefined }); // same browser that signed in
       grants.delete(grant);
       res.setHeader('Set-Cookie', `${COOKIE}=; Path=/hs; Max-Age=0; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`);
       res.json({ ok: true, as: [s.user?.name, s.user?.email].filter(Boolean).join(' · ') || 'your account' });
@@ -160,7 +161,7 @@ function receivePage() {
   const t = new URLSearchParams(location.hash.slice(1)).get('t') || '';
   history.replaceState(null, '', location.pathname); // wipe the token from the address bar
   try {
-    const r = await fetch('/hs/receive', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: t }) });
+    const r = await fetch('/hs/receive', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: t, ua: navigator.userAgent }) });
     const j = await r.json();
     if (j.ok) { h1.textContent = 'Connected'; msg.className = 'ok'; msg.textContent = 'Signed in as ' + j.as + '. You can close this window.'; }
     else { h1.textContent = 'Not connected'; msg.className = 'err'; msg.textContent = j.error; }
