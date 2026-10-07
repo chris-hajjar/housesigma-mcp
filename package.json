@@ -5,8 +5,8 @@
   "main": "src/server.js",
   "bin": { "housesigma-mcp": "bin/stdio.js" },
   "scripts": {
-    "start": "node bin/stdio.js",
-    "http": "node bin/http.js",
+    "start": "node bin/http.js",
+    "stdio": "node bin/stdio.js",
     "test:live": "node test/live.js",
     "pack": "npx --yes @anthropic-ai/mcpb@latest pack"
   },
