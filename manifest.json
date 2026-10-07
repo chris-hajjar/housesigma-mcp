@@ -1,0 +1,66 @@
+{
+  "manifest_version": "0.2",
+  "name": "housesigma-mcp",
+  "display_name": "HouseSigma",
+  "version": "0.1.1",
+  "description": "Search HouseSigma rentals and sales, pull listing detail, history, photos, comparables and market stats, read your watchlists, track searches for changes, export CSVs — all from Claude, on your own account.",
+  "long_description": "Personal MCP server over HouseSigma. Log in once with your Google account in a Chrome window (profile kept locally, token cached); then search by place, map box or one of your watched areas with every filter the app has (rent, sale, sold, leased, de-listed, pre-construction), open any listing for its full history, estimate and facts, grab photos, see nearby comparables and market trends, read your watchlists and saved filters, save named searches and ask what's new since last time, and write any list to CSV with csv:true. A call_api escape hatch reaches any endpoint with signing and encryption handled. Everything (session, cache, exports) lives in the extension's data folder.",
+  "author": { "name": "Chris Hajjar" },
+  "icon": "icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "bin/stdio.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/bin/stdio.js"],
+      "env": {
+        "HS_ACCESS_TOKEN": "${user_config.access_token}",
+        "HS_PROVINCE": "${user_config.province}",
+        "HS_DATA_DIR": "${user_config.data_dir}"
+      }
+    }
+  },
+  "tools": [
+    { "name": "login", "description": "Get or refresh your HouseSigma session (Google sign-in in Chrome, or paste a token)." },
+    { "name": "suggest_places", "description": "Place typeahead: communities, cities, addresses -> ids and coordinates." },
+    { "name": "search_listings", "description": "Map search: rent / sale / sold / leased / delisted / precon with every app filter. csv:true exports." },
+    { "name": "lookup_filters", "description": "Filter vocabulary: house types, statuses, days buckets." },
+    { "name": "get_listing", "description": "Listing detail: facts, full listing history, estimate, rooms, schools, stats." },
+    { "name": "get_photos", "description": "Photo URLs for a listing, optional download." },
+    { "name": "get_comparables", "description": "Nearby rented / for-sale / sold comparables with chart." },
+    { "name": "market_stats", "description": "Trend, rent ratio, price growth, demographics." },
+    { "name": "my_saved", "description": "Your watchlists, watched listings, watched areas, saved filters, recent, notes." },
+    { "name": "update_watchlist", "description": "Watch/unwatch, add/remove on a watchlist, add a note (your own account)." },
+    { "name": "track_search", "description": "Save / list / delete named searches for whats_new." },
+    { "name": "whats_new", "description": "Run tracked searches and diff: new, removed, price and status changes." },
+    { "name": "call_api", "description": "Any /bkv2/api path with auth, signing and encryption handled." }
+  ],
+  "tools_generated": false,
+  "user_config": {
+    "access_token": {
+      "type": "string",
+      "title": "HouseSigma access token (optional)",
+      "description": "Leave blank to sign in with Google in a Chrome window on first use. Power-user override: paste localStorage.access_token from housesigma.com.",
+      "sensitive": true,
+      "required": false
+    },
+    "province": {
+      "type": "string",
+      "title": "Province",
+      "description": "ON (default), BC or AB.",
+      "required": false,
+      "default": "ON"
+    },
+    "data_dir": {
+      "type": "string",
+      "title": "Data folder (optional)",
+      "description": "Where session, cache, Chrome profile, photos and CSV exports live. Leave blank for the extension's own data/ folder.",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32"],
+    "runtimes": { "node": ">=20.0.0" }
+  }
+}
