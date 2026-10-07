@@ -18,6 +18,7 @@ const { mcpAuthRouter, getOAuthProtectedResourceMetadataUrl } = require('@modelc
 const { requireBearerAuth } = require('@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js');
 const { buildServer } = require('../src/server');
 const { createAuth } = require('../src/auth');
+const { mountRemoteLogin } = require('../src/hs/remote_login');
 
 const PORT = Number(process.env.PORT || 8787);
 const PASSWORD = process.env.MCP_PASSWORD;
@@ -42,6 +43,9 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 // /authorize (shows the password page), /token, /register, /revoke.
 app.use(mcpAuthRouter({ provider, issuerUrl: baseUrl, resourceServerUrl: mcpUrl, resourceName: 'HouseSigma MCP' }));
 app.post('/login', express.urlencoded({ extended: false, limit: '4kb' }), loginHandler);
+
+// HouseSigma sign-in from any browser: the login tool hands out /hs/connect links (see src/hs/remote_login.js).
+mountRemoteLogin(app, { publicUrl: PUBLIC_URL });
 
 const auth = requireBearerAuth({ verifier: provider, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(mcpUrl) });
 

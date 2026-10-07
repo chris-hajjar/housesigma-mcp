@@ -4,6 +4,7 @@
 const { post, HsError } = require('../hs/client');
 const { authProvider, anonymousAuth } = require('../hs/session');
 const { writeCsv } = require('../csv');
+const { makeLink } = require('../hs/remote_login');
 
 /** Recursively drop null / undefined / '' values so results stay short. Keeps empty arrays (they mean "none"). */
 function compact(v) {
@@ -35,7 +36,12 @@ async function withApi(fn) {
   try { await authProvider.get(); }
   catch (e) {
     if (process.env.HS_ALLOW_ANON === '1') provider = anonProvider;
-    else return jsonError({ error: 'Not signed in to HouseSigma. Run the login tool first.' });
+    else {
+      const link = makeLink();
+      return jsonError(link
+        ? { error: 'Not signed in to HouseSigma.', link, tell_user: 'Open this link (good for 15 minutes), sign in on HouseSigma, then tap the "Send to MCP" bookmark. Then try again.' }
+        : { error: 'Not signed in to HouseSigma. Run the login tool first.' });
+    }
   }
   const api = { post: (path, body) => post(path, body, provider), anonymous: provider === anonProvider };
   try {
