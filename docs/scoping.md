@@ -6,8 +6,7 @@ confirmed with three anonymous read probes against the live API (v5.38.207).
 
 ## 1. Verdict
 
-Feasible, and a close cousin of the  MCPs. Two differences from the `_nativead_session`
-pattern:
+Feasible. Two differences from a typical cookie-based MCP pattern:
 
 1. **Auth is a Bearer token, not a cookie.** HouseSigma mints an anonymous `access_token`
    (`POST /init/accesstoken/new`), stores it in `localStorage.access_token` and mirrors it into a
@@ -25,26 +24,14 @@ pattern:
 
 ## 2. Session capture pattern
 
-`~/Desktop/housesigma-mcp/src/session.js`:
-
-- Resolution order: env var override, then cached JSON at `~/.deal-uploader/<name>.json` with a
-  6h absolute TTL, then Playwright (`playwright-core`, `channel: 'chrome'`, headless false,
+- Resolution order: env var override (`HS_ACCESS_TOKEN`), then cached JSON at `data/session.json` with a
+  7-day absolute TTL, then Playwright (`playwright-core`, `channel: 'chrome'`, headless false,
   ephemeral context) driving the *installed* Chrome.
-- Login detection: poll a cheap same-origin JSON "gate" from inside the page until it answers
-  authenticated, then `ctx.cookies()` and pluck the one cookie, close the browser.
-- Cache shape: `{ cookie, saved_at }`, mode 0600. All stderr, stdout stays JSON-RPC.
-
-**Port to HouseSigma, what changes:**
-
-| Piece |  | HouseSigma |
-|---|---|---|
-| Land page | `/admin-tools/domains` | `https://housesigma.com/on/` then the Sign In modal (email+password or Google) |
-| Gate | `GET /admin/domain_approvals/ad_networks` 200/403 | `page.evaluate` polling `localStorage.access_token`, then POST `/init/accesstoken/check` and wait for `data.user !== null` |
-| What to capture | `ctx.cookies()` -> `_nativead_session` | `page.evaluate(() => localStorage.getItem('access_token'))` (fallback: `storeAsyc_desk` cookie) |
-| Header on every call | `Cookie: _nativead_session=...` | `Authorization: Bearer <token>`, `HS-Client-Type: desktop_v7`, `HS-Client-Version: 7.22.40`, optional `HS-User-Id` |
-| Validity check | gate request | `/init/accesstoken/check {access_token}` returns `user`, `secret{secret_key,expired_at,is_encrypted}` |
-| Cache | 6h TTL | Same file pattern; the server-side `secret` expires in 7 days (observed `expired_at - created_at = 604800`), refresh via `/init/accesstoken/refresh` |
-| Env var override | `SA_SESSION_COOKIE` | `HS_ACCESS_TOKEN` |
+- Login detection: poll `localStorage.access_token` from inside the page until set, then POST
+  `/init/accesstoken/check` and wait for `data.user !== null`, close the browser.
+- Cache shape: `{ access_token, saved_at }`, mode 0600. All stderr, stdout stays JSON-RPC.
+- Header on every call: `Authorization: Bearer <token>`, `HS-Client-Type: desktop_v7`, `HS-Client-Version: 7.22.40`, optional `HS-User-Id`.
+- Validity check: `/init/accesstoken/check {access_token}` returns `user`, `secret{secret_key,expired_at,is_encrypted}`. Server-side secret expires in 7 days; refresh via `/init/accesstoken/refresh`.
 
 Google sign-in works fine in the Playwright flow because Chrome is the real installed browser;
 the One Tap widget just posts the credential to `/auth/user/googlesignin` with the token.

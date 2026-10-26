@@ -11,7 +11,7 @@ Multi-source plan (condos.ca, Kijiji, realtor.ca, dedup): `SOURCES.md`; one prof
 ## Run
 
 ```
-npm install --registry https://registry.npmjs.org/     # once (the  .npmrc registry rejects anonymous installs)
+npm install --registry https://registry.npmjs.org/
 ```
 
 **Claude Code**
@@ -22,7 +22,7 @@ claude mcp add housesigma -- node ~/Desktop/housesigma-mcp/bin/stdio.js
 
 **Claude Desktop**: `npm run pack` -> double-click `housesigma-mcp-<version>.mcpb`.
 
-**Remote (Railway)**: connects like a normal connector — paste the URL, click Connect, type your password.
+**Remote (Railway)**: connects like a normal connector. Paste the URL, click Connect, type your password.
 
 1. New Railway service from this GitHub repo. `railway.json` sets the start command (`node bin/http.js`)
    and the `/health` check. Leave app sleeping off: pulls run for up to ~30 min inside the process.

@@ -1,6 +1,6 @@
-// session.js — your HouseSigma session, Gmail login included. 
-// the credential is a Bearer access_token (read from localStorage / storeAsyc_desk cookie), not a cookie,
-// and Chrome runs with a PERSISTENT profile in data/chrome-profile so Google's sign-in accepts it and
+// session.js — your HouseSigma session, Gmail login included.
+// Credential is a Bearer access_token (read from localStorage / storeAsyc_desk cookie), not a cookie.
+// Chrome runs with a PERSISTENT profile in data/chrome-profile so Google's sign-in accepts it and
 // you only log in once.
 //
 // Resolution order:
